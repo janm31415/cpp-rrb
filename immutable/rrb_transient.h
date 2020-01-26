@@ -171,10 +171,13 @@ namespace immutable
     inline leaf_node<T, atomic_ref_counting>* transient_leaf_node_clone(const leaf_node<T, atomic_ref_counting>* original, guid_type guid)
       {
       leaf_node<T, atomic_ref_counting>* clone = (leaf_node<T, atomic_ref_counting>*)malloc(sizeof(leaf_node<T, atomic_ref_counting>) + (bits<N>::rrb_branching) * sizeof(T));
+      memset(clone, 0, sizeof(leaf_node<T, atomic_ref_counting>) + (bits<N>::rrb_branching) * sizeof(T));
       clone->len = original->len;
       clone->type = LEAF_NODE;
       clone->child = (T*)((char*)clone + sizeof(leaf_node<T, atomic_ref_counting>));
-      memcpy(clone->child, original->child, original->len * sizeof(T));
+      //memcpy(clone->child, original->child, original->len * sizeof(T));
+      for (uint32_t i = 0; i < original->len; ++i)
+        clone->child[i] = original->child[i]; // don't memcpy, but use copy constructor
       clone->guid = guid;
       return clone;
       }

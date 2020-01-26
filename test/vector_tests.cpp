@@ -901,10 +901,29 @@ namespace
       }
     TEST_ASSERT(error_catch);
     }
+
+  template <bool atomic_ref_counting, int N>
+  void test_vector_of_vector()
+    {
+    immutable::vector<char, atomic_ref_counting, N> v;
+    immutable::vector < immutable::vector<char, atomic_ref_counting, N>> vv;
+    for (int i = 0; i < 30; ++i)
+      {
+      for (int j = 0; j < 3; ++j)
+        {
+        v = v.push_back('a');
+        }
+      vv = vv.push_back(v);
+      }
+    for (auto ch : vv.back())
+      {
+      TEST_EQ('a', ch);
+      }
+    }
     
   template <bool atomic_ref_counting, int N>
   void run_tests()
-    {
+    {    
     test_empty_vector<atomic_ref_counting, N>();
     test_push_back_simple<atomic_ref_counting, N>();
     test_push_back<atomic_ref_counting, N>();
@@ -937,7 +956,8 @@ namespace
     test_fibocat<atomic_ref_counting, N>();
     test_invalid_states<atomic_ref_counting, N>();
     test_erase<atomic_ref_counting, N>();
-    test_concat<atomic_ref_counting, N>();
+    test_concat<atomic_ref_counting, N>();    
+    test_vector_of_vector<atomic_ref_counting, N>();
     }
 
   }
