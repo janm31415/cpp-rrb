@@ -1,5 +1,5 @@
 # cpp-rrb
-CPP port of Jean Niklas L'orange's RRB-tree implementation
+C++ port of Jean Niklas L'orange's RRB-tree implementation
 
 Relaxed Radix Balanced trees (RRB-trees) are immutable data structures with good performance
 for all vector-like operations, including insertion, erasion, and concatenation.
