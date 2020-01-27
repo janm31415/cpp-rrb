@@ -920,10 +920,56 @@ namespace
       TEST_EQ('a', ch);
       }
     }
+
+  template <bool atomic_ref_counting, int N>
+  void test_vector_bug_1()
+    {
+    immutable::vector<char, atomic_ref_counting, N> text;
+
+    immutable::vector<char, atomic_ref_counting, N> buf1;
+    auto buf1_tr = buf1.transient();
+    std::string txt1 = "Dit is mijn eerste lijntje ";
+    
+    for (auto ch : txt1)
+      buf1_tr.push_back(ch);
+    buf1 = buf1_tr.persistent();
+    text = text.insert(0, buf1);
+
+    immutable::vector<char, atomic_ref_counting, N> buf2;
+    auto buf2_tr = buf2.transient();
+    std::string txt2 = "Dit is mijn tweede lijntje ";
+    for (auto ch : txt2)
+      buf2_tr.push_back(ch);
+    buf2 = buf2_tr.persistent();
+    text = text.insert(text.size(), buf2);
+
+    immutable::vector<char, atomic_ref_counting, N> new_buf;
+    new_buf = new_buf.push_back('1');
+    new_buf = new_buf.push_back('.');
+    new_buf = new_buf.push_back(' ');
+    new_buf = new_buf.push_back('D');
+    new_buf = new_buf.push_back('i');
+    new_buf = new_buf.push_back('t');
+
+    text = text.erase(0, 3);
+    text = text.insert(0, new_buf);
+
+    new_buf = new_buf.set(0, '2');
+
+    text = text.erase(30, 33);
+
+    text = text.insert(30, new_buf);
+
+    std::stringstream str;
+
+    for (auto ch : text)
+      str << ch;
+    TEST_ASSERT(str.str() == "1. Dit is mijn eerste lijntje 2. Dit is mijn tweede lijntje ");
+    }
     
   template <bool atomic_ref_counting, int N>
   void run_tests()
-    {    
+    {        
     test_empty_vector<atomic_ref_counting, N>();
     test_push_back_simple<atomic_ref_counting, N>();
     test_push_back<atomic_ref_counting, N>();
@@ -958,6 +1004,7 @@ namespace
     test_erase<atomic_ref_counting, N>();
     test_concat<atomic_ref_counting, N>();    
     test_vector_of_vector<atomic_ref_counting, N>();
+    test_vector_bug_1<atomic_ref_counting, N>();
     }
 
   }

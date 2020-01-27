@@ -250,13 +250,13 @@ namespace immutable
       // drops first 'elems' items from the vector
       vector drop(size_type elems) const
         {
-        return rrb_drop_left(_impl, elems);
+        return rrb_slice(_impl, elems, _impl->cnt);
         }
 
       // takes first 'elems' items from the vector
       vector take(size_type elems) const
-        {
-        return rrb_drop_right(_impl, elems);
+        {       
+        return rrb_slice(_impl, 0, elems);
         }
 
       bool operator == (const vector& other) const
