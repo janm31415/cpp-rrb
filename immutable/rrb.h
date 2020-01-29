@@ -70,12 +70,6 @@ namespace immutable
   const T& rrb_peek(const ref<rrb<T, atomic_ref_counting, N>>& rrb);
 
   template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_drop_left(ref<rrb<T, atomic_ref_counting, N>> in, uint32_t left);
-
-  template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_drop_right(ref<rrb<T, atomic_ref_counting, N>> in, const uint32_t right);
-
-  template <typename T, bool atomic_ref_counting, int N>
   ref<rrb<T, atomic_ref_counting, N>> rrb_slice(const ref<rrb<T, atomic_ref_counting, N>>& rrb, uint32_t from, uint32_t to);
 
   template <typename T, bool atomic_ref_counting, int N>
@@ -235,7 +229,7 @@ namespace immutable
       mutable std::atomic<uint32_t> _ref_count;
       guid_type guid;
       T* child;
-      };    
+      };
 
     template <typename T>
     struct leaf_node<T, false>
@@ -497,7 +491,7 @@ namespace immutable
       rrb<T, atomic_ref_counting, N>* clone = (rrb<T, atomic_ref_counting, N>*)malloc(sizeof(rrb<T, atomic_ref_counting, N>));
       memcpy(clone, original, sizeof(rrb<T, atomic_ref_counting, N>));
       clone->root.inc();
-      clone->tail.inc();         
+      clone->tail.inc();
       return clone;
       }
 
@@ -585,7 +579,7 @@ namespace immutable
       for (uint32_t i = 0; i < left->len; ++i)
         merged->child[i] = left->child[i]; // don't memcpy, but use copy constructor
       for (uint32_t i = 0; i < right->len; ++i)
-        merged->child[i+left->len] = right->child[i]; // don't memcpy, but use copy constructor
+        merged->child[i + left->len] = right->child[i]; // don't memcpy, but use copy constructor
       return merged;
       }
 
@@ -960,7 +954,7 @@ namespace immutable
       {
       uint32_t is = sized_pos(node, index, sp);
       return (internal_node<T, atomic_ref_counting>*)node->child[is].ptr;
-      }    
+      }
 
     /**
      * Destructively replaces the rightmost leaf as the new tail, discarding the
@@ -1026,7 +1020,7 @@ namespace immutable
       new_rrb->root = path[0];
       }
 
-    
+
 
     template <typename T, bool atomic_ref_counting, int N>
     inline ref<tree_node<T, atomic_ref_counting>> rrb_drop_left_rec(uint32_t *total_shift, const ref<tree_node<T, atomic_ref_counting>>& root, uint32_t left, uint32_t shift, bool has_right)
@@ -1137,7 +1131,7 @@ namespace immutable
 
         //memcpy(right_vals->child, &leaf_root->child[subidx], right_vals_len * sizeof(T));
         for (uint32_t i = 0; i < right_vals_len; ++i)
-          right_vals->child[i] = leaf_root->child[subidx+i]; // don't memcpy, but use copy constructor
+          right_vals->child[i] = leaf_root->child[subidx + i]; // don't memcpy, but use copy constructor
 
         *total_shift = shift;
 
@@ -1244,11 +1238,157 @@ namespace immutable
         ref<leaf_node<T, atomic_ref_counting>> left_vals = leaf_node_create<T, atomic_ref_counting>(subidx + 1);
 
         //memcpy(left_vals->child, leaf_root->child, (subidx + 1) * sizeof(T));
-        for (uint32_t i = 0; i < subidx+1; ++i)
+        for (uint32_t i = 0; i < subidx + 1; ++i)
           left_vals->child[i] = leaf_root->child[i]; // don't memcpy, but use copy constructor
 
         *total_shift = shift;
         return left_vals;
+        }
+      }
+
+    template <typename T, bool atomic_ref_counting, int N>
+    inline ref<rrb<T, atomic_ref_counting, N>> rrb_drop_left(ref<rrb<T, atomic_ref_counting, N>> in, uint32_t left)
+      {
+      using namespace rrb_details;
+      if (left >= in->cnt)
+        {
+        return rrb_create<T, atomic_ref_counting, N>();
+        }
+      else if (left > 0)
+        {
+        const uint32_t remaining = in->cnt - left;
+
+        // If we slice into the tail, we just need to modify the tail itself
+        if (remaining <= in->tail_len)
+          {
+          ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(remaining);
+          //memcpy(new_tail->child, &in->tail->child[in->tail_len - remaining], remaining * sizeof(T));
+          for (uint32_t i = 0; i < remaining; ++i)
+            new_tail->child[i] = in->tail->child[in->tail_len - remaining + i]; // don't memcpy, but use copy constructor
+
+          ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_create<T, atomic_ref_counting, N>();
+          new_rrb->cnt = remaining;
+          new_rrb->tail_len = remaining;
+          new_rrb->tail = new_tail;
+          return new_rrb;
+          }
+        // Otherwise, we don't really have to take the tail into consideration.
+        // Good!
+
+        ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_create<T, atomic_ref_counting, N>();
+        ref<internal_node<T, atomic_ref_counting>> root = rrb_drop_left_rec<T, atomic_ref_counting, N>(&new_rrb->shift, in->root, left, in->shift, false);
+        new_rrb->cnt = remaining;
+        new_rrb->root = root;
+
+        // Ensure last element in size table is correct size, if the root is an
+        // internal node.
+        if (new_rrb->shift != 0 && root->size_table.ptr != nullptr)
+          {
+          root->size_table->size[root->len - 1] = new_rrb->cnt - in->tail_len;
+          }
+        new_rrb->tail = in->tail;
+        new_rrb->tail_len = in->tail_len;
+        in = new_rrb;
+        }
+
+      // TODO: I think the code below also applies to root nodes where size_table
+      // == NULL and (cnt - tail_len) & 0xff != 0, but it may be that this is
+      // resolved by rrb_drop_right itself. Perhaps not promote in the right slicing,
+      // but here instead?
+
+      // This case handles leaf nodes < RRB_BRANCHING size, by redistributing
+      // values from the tail into the actual leaf node.
+      if (in->shift == 0 && in->root.ptr != nullptr)
+        {
+        // two cases to handle: cnt <= RRB_BRANCHING
+        //     and (cnt - tail_len) < RRB_BRANCHING
+
+        if (in->cnt <= bits<N>::rrb_branching)
+          {
+          // can put all into a new tail
+          ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(in->cnt);
+          //memcpy(&new_tail->child[0], &((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[0], in->root->len * sizeof(T));
+          for (uint32_t i = 0; i < in->root->len; ++i)
+            new_tail->child[i] = ((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[i]; // don't memcpy, but use copy constructor
+
+          //memcpy(&new_tail->child[in->root->len], &in->tail->child[0], in->tail_len * sizeof(T));
+          for (uint32_t i = 0; i < in->tail_len; ++i)
+            new_tail->child[in->root->len + i] = in->tail->child[i]; // don't memcpy, but use copy constructor
+          in->tail_len = in->cnt;
+          in->root = ref<tree_node<T, atomic_ref_counting>>(nullptr);
+          in->tail = new_tail;
+          }
+        // no need for <= here, because if the root node is == rrb_branching, the
+        // invariant is kept.
+        else if (in->cnt - in->tail_len < bits<N>::rrb_branching)
+          {
+          // create both a new tail and a new root node
+          const uint32_t tail_cut = bits<N>::rrb_branching - in->root->len;
+          ref<leaf_node<T, atomic_ref_counting>> new_root = leaf_node_create<T, atomic_ref_counting>(bits<N>::rrb_branching);
+          ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(in->tail_len - tail_cut);
+
+          //memcpy(&new_root->child[0], &((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[0], in->root->len * sizeof(T));
+          for (uint32_t i = 0; i < in->root->len; ++i)
+            new_root->child[i] = ((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[i]; // don't memcpy, but use copy constructor
+
+          //memcpy(&new_root->child[in->root->len], &in->tail->child[0], tail_cut * sizeof(T));
+          for (uint32_t i = 0; i < tail_cut; ++i)
+            new_root->child[in->root->len + i] = in->tail->child[i]; // don't memcpy, but use copy constructor
+
+          //memcpy(&new_tail->child[0], &in->tail->child[tail_cut], (in->tail_len - tail_cut) * sizeof(T));
+          for (uint32_t i = 0; i < (in->tail_len - tail_cut); ++i)
+            new_tail->child[i] = in->tail->child[tail_cut + i]; // don't memcpy, but use copy constructor
+
+          in->tail_len = in->tail_len - tail_cut;
+          in->tail = new_tail;
+          in->root = new_root;
+          }
+        }
+      return in;
+      }
+
+
+    template <typename T, bool atomic_ref_counting, int N>
+    inline ref<rrb<T, atomic_ref_counting, N>> rrb_drop_right(ref<rrb<T, atomic_ref_counting, N>> in, const uint32_t right)
+      {
+      using namespace rrb_details;
+      if (right == 0)
+        {
+        return rrb_create<T, atomic_ref_counting, N>();
+        }
+      else if (right < in->cnt)
+        {
+        const uint32_t tail_offset = in->cnt - in->tail_len;
+        // Can just cut the tail slightly
+        if (tail_offset < right)
+          {
+          ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_head_clone(in.ptr);
+          const uint32_t new_tail_len = right - tail_offset;
+          ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(new_tail_len);
+          //memcpy(new_tail->child, in->tail->child, new_tail_len * sizeof(T));
+          for (uint32_t i = 0; i < new_tail_len; ++i)
+            new_tail->child[i] = in->tail->child[i]; // don't memcpy, but use copy constructor
+
+          new_rrb->cnt = right;
+          new_rrb->tail = new_tail;
+          new_rrb->tail_len = new_tail_len;
+          return new_rrb;
+          }
+
+        ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_create<T, atomic_ref_counting, N>();
+        ref<tree_node<T, atomic_ref_counting>> root = rrb_drop_right_rec<T, atomic_ref_counting, N>(&new_rrb->shift, in->root, right - 1, in->shift, false);
+        new_rrb->cnt = right;
+        new_rrb->root = root;
+
+        // Not sure if this is necessary in this part of the program, due to issues
+        // wrt. rrb_drop_left and roots without size tables.
+        promote_rightmost_leaf(new_rrb);
+        new_rrb->tail_len = new_rrb->tail->len;
+        return new_rrb;
+        }
+      else
+        {
+        return in;
         }
       }
 
@@ -1418,7 +1558,7 @@ namespace immutable
 
                 //memcpy(&new_node->child[cur_size], &old_node->child[offset], (old_node->len - offset) * sizeof(T));
                 for (uint32_t j = 0; j < old_node->len - offset; ++j)
-                  new_node->child[cur_size+j] = old_node->child[offset+j]; // don't memcpy, but use copy constructor
+                  new_node->child[cur_size + j] = old_node->child[offset + j]; // don't memcpy, but use copy constructor
 
                 cur_size += old_node->len - offset;
                 idx++;
@@ -1577,7 +1717,7 @@ namespace immutable
           }
         }
       }
-         
+
 
 
     } // namespace rrb_details
@@ -1897,7 +2037,7 @@ namespace immutable
           const uint32_t right_cut = bits<N>::rrb_branching - left->tail_len;
           //memcpy(&push_down->child[left->tail_len], &right->tail->child[0], right_cut * sizeof(T));
           for (uint32_t i = 0; i < right_cut; ++i)
-            push_down->child[left->tail_len+i] = right->tail->child[i]; // don't memcpy, but use copy constructor
+            push_down->child[left->tail_len + i] = right->tail->child[i]; // don't memcpy, but use copy constructor
 
           // this will be strictly positive.
           const uint32_t new_tail_len = right->tail_len - right_cut;
@@ -1905,7 +2045,7 @@ namespace immutable
 
           //memcpy(&new_tail->child[0], &right->tail->child[right_cut], new_tail_len * sizeof(T));
           for (uint32_t i = 0; i < new_tail_len; ++i)
-            new_tail->child[i] = right->tail->child[right_cut+i]; // don't memcpy, but use copy constructor
+            new_tail->child[i] = right->tail->child[right_cut + i]; // don't memcpy, but use copy constructor
 
           new_rrb->tail = push_down;
           new_rrb->tail_len = new_tail_len;
@@ -1940,156 +2080,10 @@ namespace immutable
       }
     }
 
-
-  template <typename T, bool atomic_ref_counting, int N>
-  inline ref<rrb<T, atomic_ref_counting, N>> rrb_drop_left(ref<rrb<T, atomic_ref_counting, N>> in, uint32_t left)
-    {
-    using namespace rrb_details;
-    if (left >= in->cnt)
-      {
-      return rrb_create<T, atomic_ref_counting, N>();
-      }
-    else if (left > 0)
-      {
-      const uint32_t remaining = in->cnt - left;
-
-      // If we slice into the tail, we just need to modify the tail itself
-      if (remaining <= in->tail_len)
-        {
-        ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(remaining);
-        //memcpy(new_tail->child, &in->tail->child[in->tail_len - remaining], remaining * sizeof(T));
-        for (uint32_t i = 0; i < remaining; ++i)
-          new_tail->child[i] = in->tail->child[in->tail_len - remaining + i]; // don't memcpy, but use copy constructor
-
-        ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_create<T, atomic_ref_counting, N>();
-        new_rrb->cnt = remaining;
-        new_rrb->tail_len = remaining;
-        new_rrb->tail = new_tail;
-        return new_rrb;
-        }
-      // Otherwise, we don't really have to take the tail into consideration.
-      // Good!
-
-      ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_create<T, atomic_ref_counting, N>();
-      ref<internal_node<T, atomic_ref_counting>> root = rrb_drop_left_rec<T, atomic_ref_counting, N>(&new_rrb->shift, in->root, left, in->shift, false);
-      new_rrb->cnt = remaining;
-      new_rrb->root = root;
-
-      // Ensure last element in size table is correct size, if the root is an
-      // internal node.
-      if (new_rrb->shift != 0 && root->size_table.ptr != nullptr)
-        {
-        root->size_table->size[root->len - 1] = new_rrb->cnt - in->tail_len;
-        }
-      new_rrb->tail = in->tail;
-      new_rrb->tail_len = in->tail_len;
-      in = new_rrb;
-      }
-
-    // TODO: I think the code below also applies to root nodes where size_table
-    // == NULL and (cnt - tail_len) & 0xff != 0, but it may be that this is
-    // resolved by rrb_drop_right itself. Perhaps not promote in the right slicing,
-    // but here instead?
-
-    // This case handles leaf nodes < RRB_BRANCHING size, by redistributing
-    // values from the tail into the actual leaf node.
-    if (in->shift == 0 && in->root.ptr != nullptr)
-      {
-      // two cases to handle: cnt <= RRB_BRANCHING
-      //     and (cnt - tail_len) < RRB_BRANCHING
-
-      if (in->cnt <= bits<N>::rrb_branching)
-        {
-        // can put all into a new tail
-        ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(in->cnt);
-        //memcpy(&new_tail->child[0], &((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[0], in->root->len * sizeof(T));
-        for (uint32_t i = 0; i < in->root->len; ++i)
-          new_tail->child[i] = ((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[i]; // don't memcpy, but use copy constructor
-
-        //memcpy(&new_tail->child[in->root->len], &in->tail->child[0], in->tail_len * sizeof(T));
-        for (uint32_t i = 0; i < in->tail_len; ++i)
-          new_tail->child[in->root->len+i] = in->tail->child[i]; // don't memcpy, but use copy constructor
-        in->tail_len = in->cnt;
-        in->root = ref<tree_node<T, atomic_ref_counting>>(nullptr);
-        in->tail = new_tail;
-        }
-      // no need for <= here, because if the root node is == rrb_branching, the
-      // invariant is kept.
-      else if (in->cnt - in->tail_len < bits<N>::rrb_branching)
-        {
-        // create both a new tail and a new root node
-        const uint32_t tail_cut = bits<N>::rrb_branching - in->root->len;
-        ref<leaf_node<T, atomic_ref_counting>> new_root = leaf_node_create<T, atomic_ref_counting>(bits<N>::rrb_branching);
-        ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(in->tail_len - tail_cut);
-
-        //memcpy(&new_root->child[0], &((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[0], in->root->len * sizeof(T));
-        for (uint32_t i = 0; i < in->root->len; ++i)
-          new_root->child[i] = ((leaf_node<T, atomic_ref_counting> *)in->root.ptr)->child[i]; // don't memcpy, but use copy constructor
-
-        //memcpy(&new_root->child[in->root->len], &in->tail->child[0], tail_cut * sizeof(T));
-        for (uint32_t i = 0; i < tail_cut; ++i)
-          new_root->child[in->root->len+i] = in->tail->child[i]; // don't memcpy, but use copy constructor
-
-        //memcpy(&new_tail->child[0], &in->tail->child[tail_cut], (in->tail_len - tail_cut) * sizeof(T));
-        for (uint32_t i = 0; i < (in->tail_len - tail_cut); ++i)
-          new_tail->child[i] = in->tail->child[tail_cut + i]; // don't memcpy, but use copy constructor
-
-        in->tail_len = in->tail_len - tail_cut;
-        in->tail = new_tail;
-        in->root = new_root;
-        }
-      }
-    return in;
-    }
-
-
-  template <typename T, bool atomic_ref_counting, int N>
-  inline ref<rrb<T, atomic_ref_counting, N>> rrb_drop_right(ref<rrb<T, atomic_ref_counting, N>> in, const uint32_t right)
-    {
-    using namespace rrb_details;
-    if (right == 0)
-      {
-      return rrb_create<T, atomic_ref_counting, N>();
-      }
-    else if (right < in->cnt)
-      {
-      const uint32_t tail_offset = in->cnt - in->tail_len;
-      // Can just cut the tail slightly
-      if (tail_offset < right)
-        {
-        ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_head_clone(in.ptr);
-        const uint32_t new_tail_len = right - tail_offset;
-        ref<leaf_node<T, atomic_ref_counting>> new_tail = leaf_node_create<T, atomic_ref_counting>(new_tail_len);
-        //memcpy(new_tail->child, in->tail->child, new_tail_len * sizeof(T));
-        for (uint32_t i = 0; i < new_tail_len; ++i)
-          new_tail->child[i] = in->tail->child[i]; // don't memcpy, but use copy constructor
-
-        new_rrb->cnt = right;
-        new_rrb->tail = new_tail;
-        new_rrb->tail_len = new_tail_len;
-        return new_rrb;
-        }
-
-      ref<rrb<T, atomic_ref_counting, N>> new_rrb = rrb_create<T, atomic_ref_counting, N>();
-      ref<tree_node<T, atomic_ref_counting>> root = rrb_drop_right_rec<T, atomic_ref_counting, N>(&new_rrb->shift, in->root, right - 1, in->shift, false);
-      new_rrb->cnt = right;
-      new_rrb->root = root;
-
-      // Not sure if this is necessary in this part of the program, due to issues
-      // wrt. rrb_drop_left and roots without size tables.
-      promote_rightmost_leaf(new_rrb);
-      new_rrb->tail_len = new_rrb->tail->len;
-      return new_rrb;
-      }
-    else
-      {
-      return in;
-      }
-    }
-
   template <typename T, bool atomic_ref_counting, int N>
   inline ref<rrb<T, atomic_ref_counting, N>> rrb_slice(const ref<rrb<T, atomic_ref_counting, N>>& rrb, uint32_t from, uint32_t to)
     {
+    using namespace rrb_details;
     return rrb_drop_left(rrb_drop_right(rrb, to), from);
     }
 

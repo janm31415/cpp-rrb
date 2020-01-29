@@ -250,53 +250,7 @@ namespace immutable
       }
 
     TEST_ASSERT(validate_rrb(tree));
-    }
-
-  void test_drop_left(uint32_t sz = 40000, uint32_t slice_pos = 1000)
-    {
-
-    std::vector<int> list(sz);
-    for (auto& v : list)
-      v = rand();
-
-    ref<rrb<int>> tree = rrb_create<int>();
-    for (uint32_t i = 0; i < sz; ++i)
-      {
-      tree = rrb_push(tree, list[i]);
-      }
-
-    tree = rrb_drop_left(tree, slice_pos);
-    TEST_EQ(sz - slice_pos, tree->cnt);
-    for (uint32_t i = slice_pos; i < sz; ++i)
-      {
-      TEST_EQ(list[i], rrb_nth(tree, i - slice_pos));
-      }
-
-    TEST_ASSERT(validate_rrb(tree));
-    }
-
-  void test_drop_right(uint32_t sz = 40000, uint32_t slice_pos = 1000)
-    {
-
-    std::vector<int> list(sz);
-    for (auto& v : list)
-      v = rand();
-
-    ref<rrb<int>> tree = rrb_create<int>();
-    for (uint32_t i = 0; i < sz; ++i)
-      {
-      tree = rrb_push(tree, list[i]);
-      }
-
-    tree = rrb_drop_right(tree, slice_pos);
-    TEST_EQ(slice_pos, tree->cnt);
-    for (uint32_t i = 0; i < slice_pos; ++i)
-      {
-      TEST_EQ(list[i], rrb_nth(tree, i));
-      }
-
-    TEST_ASSERT(validate_rrb(tree));
-    }
+    }  
 
   void test_slice(uint32_t sz = 40000, uint32_t slices = 10000)
     {
@@ -648,8 +602,6 @@ void run_all_rrb_tests()
   test_count(20);
   test_pop(20);
   test_update(20, 10);
-  test_drop_left(20, 5);
-  test_drop_right(20, 5);
   test_slice(20, 5);
   test_concat(20);
   test_transient_push(20);
@@ -660,8 +612,6 @@ void run_all_rrb_tests()
   test_count(200);
   test_pop(200);
   test_update(200, 100);
-  test_drop_left(200, 50);
-  test_drop_right(200, 50);
   test_slice(200, 50);
   test_concat(200);
   test_transient_push(200);
@@ -672,8 +622,6 @@ void run_all_rrb_tests()
   test_count();
   test_pop();
   test_update();
-  test_drop_left();
-  test_drop_right();
 
   test_catslice();
   test_fibocat();
