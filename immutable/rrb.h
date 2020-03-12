@@ -1815,7 +1815,7 @@ namespace immutable
     };
 
   template <typename T, int N>
-  struct rrb<T, N, false>
+  struct rrb<T, false, N>
     {
     uint32_t cnt;
     uint32_t shift;
