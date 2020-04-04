@@ -146,6 +146,40 @@ namespace
     }
 
   template <bool atomic_ref_counting, int N>
+  void test_slice(uint32_t sz = 40000, uint32_t slices = 10000)
+    {
+
+    std::vector<int> list(sz);
+    for (auto& v : list)
+      v = rand();
+
+    immutable::vector<int, atomic_ref_counting, N> vec;
+    for (uint32_t i = 0; i < sz; ++i)
+      {
+      vec = vec.push_back(list[i]);
+      }
+
+    std::vector<int> from_list(slices);
+    std::vector<int> to_list(slices);
+    for (uint32_t i = 0; i < slices; ++i)
+      {
+      from_list[i] = rand() % sz;
+      to_list[i] = (rand() % (sz - from_list[i])) + from_list[i];
+      }
+
+    for (uint32_t i = 0; i < slices; ++i)
+      {
+      auto sliced = vec.slice(from_list[i], to_list[i]);
+      for (uint32_t j = 0; j < sliced.size(); ++j)
+        {
+        int sliced_val = sliced[j];
+        int original_val = vec[j + from_list[i]];
+        TEST_EQ(original_val, sliced_val);
+        }
+      }
+    }
+
+  template <bool atomic_ref_counting, int N>
   void test_erase_single(uint32_t sz = 10000)
     {
     std::vector<int> list(sz);

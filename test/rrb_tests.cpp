@@ -38,14 +38,14 @@ namespace immutable
 
   void test_empty_rrb()
     {
-    ref<rrb<char>> tree = rrb_create<char>();
+    ref<rrb<char>> tree = rrb_create<char, true, 5>();
     TEST_EQ(0, tree->cnt);
     }
 
 
   void test_push_tail()
     {
-    ref<rrb<char>> tree = rrb_create<char>();
+    ref<rrb<char>> tree = rrb_create<char, true, 5>();
 
     ref<rrb<char>> pushed_tree_a = rrb_push(tree, 'a');
     ref<rrb<char>> pushed_tree_b = rrb_push(pushed_tree_a, 'b');
@@ -61,7 +61,7 @@ namespace immutable
 
   void test_push_tail2()
     {
-    ref<rrb<char>> tree = rrb_create<char>();
+    ref<rrb<char>> tree = rrb_create<char, true, 5>();
 
     ref<rrb<char>> new_tree;
     for (int i = 0; i < 50; ++i)
@@ -107,7 +107,7 @@ namespace immutable
   void test_push_tail3()
     {
 
-    ref<rrb<char>> tree = rrb_create<char>();
+    ref<rrb<char>> tree = rrb_create<char, true, 5>();
 
     ref<rrb<char>> new_tree;
     for (int i = 0; i < 80; ++i)
@@ -126,7 +126,7 @@ namespace immutable
   void test_push_tail4()
     {
 
-    ref<rrb<char>> tree = rrb_create<char>();
+    ref<rrb<char>> tree = rrb_create<char, true, 5>();
 
     ref<rrb<char>> new_tree;
     for (int i = 0; i < 8000; ++i)
@@ -150,7 +150,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<rrb<int>> tree = rrb_create<int>();
+    ref<rrb<int>> tree = rrb_create<int, true, 5>();
     for (auto& v : list)
       {
       tree = rrb_push(tree, v);
@@ -169,7 +169,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<rrb<int>> tree = rrb_create<int>();
+    ref<rrb<int>> tree = rrb_create<int, true, 5>();
     for (auto& v : list)
       {
       tree = rrb_push(tree, v);
@@ -183,7 +183,7 @@ namespace immutable
   void test_count(uint32_t sz = 40000)
     {
 
-    ref<rrb<int>> tree = rrb_create<int>();
+    ref<rrb<int>> tree = rrb_create<int, true, 5>();
     for (uint32_t i = 0; i < sz; ++i)
       {
       tree = rrb_push(tree, 5);
@@ -200,7 +200,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<rrb<int>> tree = rrb_create<int>();
+    ref<rrb<int>> tree = rrb_create<int, true, 5>();
     for (uint32_t i = 0; i < sz; ++i)
       {
       tree = rrb_push(tree, list[i]);
@@ -223,7 +223,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<rrb<int>> tree = rrb_create<int>();
+    ref<rrb<int>> tree = rrb_create<int, true, 5>();
     for (uint32_t i = 0; i < sz; ++i)
       {
       tree = rrb_push(tree, list[i]);
@@ -259,7 +259,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<rrb<int>> tree = rrb_create<int>();
+    ref<rrb<int>> tree = rrb_create<int, true, 5>();
     for (uint32_t i = 0; i < sz; ++i)
       {
       tree = rrb_push(tree, list[i]);
@@ -289,8 +289,8 @@ namespace immutable
   void test_concat(uint32_t sz = 10000)
     {
 
-    ref<rrb<int>> rrb1 = rrb_create<int>();
-    ref<rrb<int>> rrb2 = rrb_create<int>();
+    ref<rrb<int>> rrb1 = rrb_create<int, true, 5>();
+    ref<rrb<int>> rrb2 = rrb_create<int, true, 5>();
     for (uint32_t i = 0; i < sz; ++i)
       {
       rrb1 = rrb_push(rrb1, (int)rand());
@@ -320,7 +320,7 @@ namespace immutable
 
   void test_catslice(uint32_t sz = 400, uint32_t sliced = 53, uint32_t catted = 2310, uint32_t tot_catted = 10)
     {
-    ref<rrb<int>> tree = rrb_create<int>();
+    ref<rrb<int>> tree = rrb_create<int, true, 5>();
     for (uint32_t i = 0; i < sz; ++i)
       tree = rrb_push(tree, (int)rand() % 10000);
 
@@ -337,7 +337,7 @@ namespace immutable
     for (uint32_t i = 0; i < catted; ++i)
       {
       uint32_t tot_cats = (uint32_t)rand() % tot_catted;
-      ref<rrb<int>> multicat = rrb_create<int>();
+      ref<rrb<int>> multicat = rrb_create<int, true, 5>();
       std::vector< ref<rrb<int>>> catsteps(tot_cats);
       std::vector<uint32_t> merged_in(tot_cats);
       for (uint32_t cat_num = 0; cat_num < tot_cats; ++cat_num)
@@ -376,7 +376,7 @@ namespace immutable
     for (uint32_t i = 0; i < predef_rrbs; ++i)
       {
       const uint32_t local_sz = (rand() % max_init_size);
-      rrbs[i] = rrb_create<int>();
+      rrbs[i] = rrb_create<int, true, 5>();
       for (uint32_t j = 0; j < local_sz; ++j)
         {
         rrbs[i] = rrb_push(rrbs[i], rand() & 0xffff);
@@ -416,7 +416,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<transient_rrb<int>> tree = rrb_to_transient(rrb_create<int>());
+    ref<transient_rrb<int, true, 5>> tree = rrb_to_transient(rrb_create<int, true, 5>());
     for (uint32_t i = 0; i < sz; ++i)
       {
       tree = transient_rrb_push(tree, list[i]);
@@ -435,7 +435,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<transient_rrb<int>> trrb = rrb_to_transient(rrb_create<int>());
+    ref<transient_rrb<int>> trrb = rrb_to_transient(rrb_create<int, true, 5>());
 
     for (uint32_t i = 0; i < sz; ++i)
       {
@@ -458,7 +458,7 @@ namespace immutable
     for (auto& v : list)
       v = rand();
 
-    ref<transient_rrb<int>> trrb = rrb_to_transient(rrb_create<int>());
+    ref<transient_rrb<int>> trrb = rrb_to_transient(rrb_create<int, true, 5>());
     for (uint32_t i = 0; i < sz; ++i)
       {
       trrb = transient_rrb_push(trrb, list[i]);
@@ -506,8 +506,8 @@ namespace immutable
         extra_vals[i] = rand() % 0x1000;
 
       uint32_t rand_cut = rand() % rrb_size;
-      ref<rrb<int>> left = rrb_create<int>();
-      ref<rrb<int>> right = rrb_create<int>();
+      ref<rrb<int>> left = rrb_create<int, true, 5>();
+      ref<rrb<int>> right = rrb_create<int, true, 5>();
 
       ref<transient_rrb<int>> tmp = rrb_to_transient(left);
       for (uint32_t i = 0; i < rand_cut; i++) 

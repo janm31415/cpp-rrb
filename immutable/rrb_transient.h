@@ -36,9 +36,6 @@ namespace immutable
   {
 
   template <typename T, bool atomic_ref_counting, int N>
-  struct transient_rrb;
-
-  template <typename T, bool atomic_ref_counting, int N>
   ref<transient_rrb<T, atomic_ref_counting, N>> rrb_to_transient(const ref<rrb<T, atomic_ref_counting, N>>& in);
 
   template <typename T, bool atomic_ref_counting, int N>

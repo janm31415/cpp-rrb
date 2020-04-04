@@ -36,14 +36,53 @@
 #include <atomic>
 #include <tuple>
 
+#ifndef _WIN32
+#include <string.h>
+#endif
+
 namespace immutable
   {
 
   template <typename T, bool atomic_ref_counting, int N>
   struct rrb;
 
+  template <typename T, bool atomic_ref_counting, int N>
+  struct transient_rrb;
+
   template <typename T>
-  struct ref;
+  struct ref
+    {
+    ref();
+
+    ref(T* p);
+
+    template <typename U>
+    ref(U* p);
+
+    ref(const ref<T>& r);
+
+    template <typename U>
+    ref(const ref<U>& r);
+
+    ~ref();
+
+    T* operator->() const;
+
+    void swap(ref<T>& r);
+
+    ref<T>& operator = (const ref<T>& r);
+
+    template <typename U>
+    ref<T>& operator = (const ref<U>& r);
+
+    bool unique();
+
+    void inc() const;
+
+    void dec() const;
+
+    T* ptr;
+    };
 
   template <typename T, bool atomic_ref_counting, int N>
   ref<rrb<T, atomic_ref_counting, N>> rrb_create();
@@ -164,6 +203,18 @@ namespace immutable
 
     template <typename T, int N>
     void addref(const rrb<T, false, N>* p_node);
+
+    template <typename T, int N>
+    void release(const transient_rrb<T, true, N>* p_node);
+
+    template <typename T, int N>
+    void release(const transient_rrb<T, false, N>* p_node);
+
+    template <typename T, int N>
+    void addref(const transient_rrb<T, true, N>* p_node);
+
+    template <typename T, int N>
+    void addref(const transient_rrb<T, false, N>* p_node);
 
     template <bool atomic_ref_counting>
     struct rrb_size_table
@@ -1723,85 +1774,93 @@ namespace immutable
     } // namespace rrb_details
 
 
-  template <typename T>
-  struct ref
-    {
-    ref() : ptr(nullptr) {}
+    template <typename T>
+    ref<T>::ref() : ptr(nullptr) {}
 
-    ref(T* p) : ptr(p)
+    template <typename T>
+    ref<T>::ref(T* p) : ptr(p)
       {
       if (ptr)
         ptr->_ref_count = 1;
       }
 
+    template <typename T>
     template <typename U>
-    ref(U* p) : ptr((T*)p)
+    ref<T>::ref(U* p) : ptr((T*)p)
       {
       if (ptr)
         ptr->_ref_count = 1;
       }
 
-    ref(const ref<T>& r) : ptr(r.ptr)
+    template <typename T>
+    ref<T>::ref(const ref<T>& r) : ptr(r.ptr)
       {
       rrb_details::addref(ptr);
       }
 
+    template <typename T>
     template <typename U>
-    ref(const ref<U>& r) : ptr((T*)r.ptr)
+    ref<T>::ref(const ref<U>& r) : ptr((T*)r.ptr)
       {
       rrb_details::addref(ptr);
       }
 
-    ~ref()
+    template <typename T>
+    ref<T>::~ref()
       {
       rrb_details::release(ptr);
       }
 
-    T* operator->() const
+    template <typename T>  
+    T* ref<T>::operator->() const
       {
       assert(ptr != nullptr);
       return ptr;
       }
 
-    void swap(ref<T>& r)
+    template <typename T>  
+    void ref<T>::swap(ref<T>& r)
       {
       T* temp = ptr;
       ptr = r.ptr;
       r.ptr = temp;
       }
 
-    ref<T>& operator = (const ref<T>& r)
+    template <typename T>  
+    ref<T>& ref<T>::operator = (const ref<T>& r)
       {
       ref<T> temp(r);
       swap(temp);
       return *this;
       }
 
+    template <typename T>  
     template <typename U>
-    ref<T>& operator = (const ref<U>& r)
+    ref<T>& ref<T>::operator = (const ref<U>& r)
       {
       ref<T> temp(r);
       swap(temp);
       return *this;
       }
 
-    bool unique()
+    template <typename T>  
+    bool ref<T>::unique()
       {
       return (ptr == nullptr) || (ptr->_ref_count == 1);
       }
 
-    void inc() const
+    template <typename T>  
+    void ref<T>::inc() const
       {
       rrb_details::addref(ptr);
       }
 
-    void dec() const
+    template <typename T>  
+    void ref<T>::dec() const
       {
       rrb_details::release(ptr);
       }
 
-    T* ptr;
-    };
 
   template <typename T, bool atomic_ref_counting = true, int N = 5>
   struct rrb
