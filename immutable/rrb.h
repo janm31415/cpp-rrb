@@ -832,7 +832,8 @@ namespace immutable
       {
       ref<leaf_node<T, atomic_ref_counting>> old_tail = new_rrb->tail;
       new_rrb->tail = new_tail;
-      if (in->cnt <= bits<N>::rrb_branching)
+      //if (in->cnt <= bits<N>::rrb_branching)
+      if (in->root.ptr == nullptr) // [JanM] old code is commented out above. Fixed this due to bug, see unit test test_bug_concat in vector_tests.cpp
         {
         new_rrb->shift = 0;
         new_rrb->root = old_tail;

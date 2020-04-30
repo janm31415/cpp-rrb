@@ -292,6 +292,11 @@ namespace immutable
         return transient_type(_impl);
         }
 
+      ref<rrb<T, atomic_ref_counting, N>> raw() const
+        {
+        return _impl;
+        }
+
     private:
       vector(const ref<rrb<T, atomic_ref_counting, N>>& impl) : _impl(impl)
         {

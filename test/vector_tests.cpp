@@ -2,6 +2,7 @@
 #include "test_assert.h"
 #include <iostream>
 #include <immutable/vector.h>
+#include <immutable/rrb_debug.h>
 #include <vector>
 
 namespace
@@ -1000,6 +1001,42 @@ namespace
       str << ch;
     TEST_ASSERT(str.str() == "1. Dit is mijn eerste lijntje 2. Dit is mijn tweede lijntje ");
     }
+
+
+  template <bool atomic_ref_counting, int N>
+  void test_bug_concat()
+    {
+    immutable::vector<char, atomic_ref_counting, N> text;
+    auto text_tr = text.transient();
+    std::string txt1 =
+      R"(sdflkjkljdsflkjasd;lkfjsadlkfja;sdlkfj;asdlkfjsld;kfjls;dakfjlwefjlwkedflskxnvnv;laskdjfl;kwejfrl;kjsad;lfkfj;lwkejf)";
+
+    for (auto ch : txt1)
+      text_tr.push_back(ch);
+    text = text_tr.persistent();
+
+    TEST_ASSERT(immutable::validate_rrb(text.raw()));
+
+    text = text.insert(0, '\n');
+    text = text.insert(0, '\n');
+    text = text.insert(0, 'a');
+    text = text.insert(0, 'b');
+    text = text.insert(0, 'c');
+
+    TEST_ASSERT(immutable::validate_rrb(text.raw()));
+
+    auto t1 = text.take(10);
+    auto t2 = text.drop(11);
+
+    TEST_ASSERT(immutable::validate_rrb(text.raw()));
+    TEST_ASSERT(immutable::validate_rrb(t1.raw()));
+    TEST_ASSERT(immutable::validate_rrb(t2.raw()));
+
+    auto c = t1 + t2;
+
+    TEST_ASSERT(immutable::validate_rrb(c.raw()));
+
+    }
     
   template <bool atomic_ref_counting, int N>
   void run_tests()
@@ -1039,6 +1076,7 @@ namespace
     test_concat<atomic_ref_counting, N>();    
     test_vector_of_vector<atomic_ref_counting, N>();
     test_vector_bug_1<atomic_ref_counting, N>();
+    test_bug_concat<atomic_ref_counting, N>();
     }
 
   }
