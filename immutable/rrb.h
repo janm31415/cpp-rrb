@@ -85,34 +85,34 @@ namespace immutable
     };
 
   template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_create();
+  ref<rrb<T, atomic_ref_counting, N> > rrb_create();
 
   template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_push(const ref<rrb<T, atomic_ref_counting, N>>& in, T element);
+  ref<rrb<T, atomic_ref_counting, N> > rrb_push(const ref<rrb<T, atomic_ref_counting, N> >& in, T element);
 
   template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_pop(const ref<rrb<T, atomic_ref_counting, N>>& in);
+  ref<rrb<T, atomic_ref_counting, N> > rrb_pop(const ref<rrb<T, atomic_ref_counting, N> >& in);
 
   template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_update(const ref<rrb<T, atomic_ref_counting, N>>& in, uint32_t index, T element);
+  ref<rrb<T, atomic_ref_counting, N> > rrb_update(const ref<rrb<T, atomic_ref_counting, N> >& in, uint32_t index, T element);
 
   template <typename T, bool atomic_ref_counting, int N>
-  const T& rrb_nth(const ref<rrb<T, atomic_ref_counting, N>>& rrb, uint32_t index);
+  const T& rrb_nth(const ref<rrb<T, atomic_ref_counting, N> >& in, uint32_t index);
 
   template <typename T, bool atomic_ref_counting, int N>
-  std::tuple<const T*, uint32_t, uint32_t> rrb_region_for(const ref<rrb<T, atomic_ref_counting, N>>& rrb, uint32_t index);
+  std::tuple<const T*, uint32_t, uint32_t> rrb_region_for(const ref<rrb<T, atomic_ref_counting, N> >& in, uint32_t index);
 
   template <typename T, bool atomic_ref_counting, int N>
-  uint32_t rrb_count(const ref<rrb<T, atomic_ref_counting, N>>& rrb);
+  uint32_t rrb_count(const ref<rrb<T, atomic_ref_counting, N> >& rrb);
 
   template <typename T, bool atomic_ref_counting, int N>
-  const T& rrb_peek(const ref<rrb<T, atomic_ref_counting, N>>& rrb);
+  const T& rrb_peek(const ref<rrb<T, atomic_ref_counting, N> >& rrb);
 
   template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_slice(const ref<rrb<T, atomic_ref_counting, N>>& rrb, uint32_t from, uint32_t to);
+  ref<rrb<T, atomic_ref_counting, N>> rrb_slice(const ref<rrb<T, atomic_ref_counting, N> >& rrb, uint32_t from, uint32_t to);
 
   template <typename T, bool atomic_ref_counting, int N>
-  ref<rrb<T, atomic_ref_counting, N>> rrb_concat(const ref<rrb<T, atomic_ref_counting, N>>& left, const ref<rrb<T, atomic_ref_counting, N>>& right);
+  ref<rrb<T, atomic_ref_counting, N>> rrb_concat(const ref<rrb<T, atomic_ref_counting, N> >& left, const ref<rrb<T, atomic_ref_counting, N> >& right);
 
   namespace rrb_details
     {
@@ -239,8 +239,8 @@ namespace immutable
       uint32_t len;
       mutable std::atomic<uint32_t> _ref_count;
       guid_type guid;
-      ref<rrb_size_table<atomic_ref_counting>> size_table;
-      ref<internal_node<T, atomic_ref_counting>>* child;
+      ref<rrb_size_table<atomic_ref_counting> > size_table;
+      ref<internal_node<T, atomic_ref_counting> >* child;
       };
 
     template <typename T>
@@ -250,8 +250,8 @@ namespace immutable
       uint32_t len;
       mutable uint32_t _ref_count;
       guid_type guid;
-      ref<rrb_size_table<false>> size_table;
-      ref<internal_node<T, false>>* child;
+      ref<rrb_size_table<false> > size_table;
+      ref<internal_node<T, false> >* child;
       };
 
     template <typename T, bool atomic_ref_counting>
