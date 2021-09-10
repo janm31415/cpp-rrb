@@ -31,4 +31,4 @@ similar to `immer::flex_vector` of the library [immer](https://github.com/arximb
 
 This library has been tested on Windows 10 using Visual Studio 2017/2019, on Ubuntu 18.04.4 with gcc 7.5.0, and on MacOS 10.15.6 with XCode 11.7. You best use CMake to generate a solution file or makefile or XCode project.
 
-For a practical application, see my [jed](https://github.com/janm31415/jed) project: a minimalist text editor inspired by [Acme](http://acme.cat-v.org/) and [Nano](https://github.com/madnight/nano).
+For a practical application, see my [jedi](https://github.com/janm31415/jedi) project: a minimalist text editor inspired by [Acme](http://acme.cat-v.org/) and [Nano](https://github.com/madnight/nano).
