@@ -31,6 +31,7 @@
 
 #include "rrb.h"
 #include <thread>
+#include <stdexcept>
 
 namespace immutable
   {
