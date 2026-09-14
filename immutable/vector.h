@@ -205,8 +205,8 @@ namespace immutable
         return rrb_nth(_impl, index);
         }
 
-      template <class T>
-      const_reference operator [] (T index) const
+      template <class TIndex>
+      const_reference operator [] (TIndex index) const
         {
         return this->operator[](static_cast<size_type>(index));
         }
@@ -218,8 +218,8 @@ namespace immutable
         return rrb_nth(_impl, index);
         }
 
-      template <class T>
-      const_reference at(T index) const
+      template <class TIndex>
+      const_reference at(TIndex index) const
         {
         return this->at(static_cast<size_type>(index));
         }
@@ -239,8 +239,8 @@ namespace immutable
         return rrb_update(_impl, index, value);
         }
 
-      template <class T>
-      vector set(T index, value_type value) const
+      template <class TIndex>
+      vector set(TIndex index, value_type value) const
         {
         return this->set(static_cast<size_type>(index), value);
         }
@@ -250,8 +250,8 @@ namespace immutable
         return take(pos) + drop(pos + 1);
         }
 
-      template <class T>
-      vector erase(T pos) const
+      template <class TIndex>
+      vector erase(TIndex pos) const
         {
         return this->erase(static_cast<size_type>(pos));
         }
@@ -261,8 +261,8 @@ namespace immutable
         return to > from ? take(from) + drop(to) : *this;
         }
 
-      template <class T>
-      vector erase(T from, T to) const
+      template <class TIndex>
+      vector erase(TIndex from, TIndex to) const
         {
         return this->erase(static_cast<size_type>(from), static_cast<size_type>(to));
         }
@@ -272,8 +272,8 @@ namespace immutable
         return take(pos).push_back(value) + drop(pos);
         }
 
-      template <class T>
-      vector insert(T pos, value_type value) const
+      template <class TIndex>
+      vector insert(TIndex pos, value_type value) const
         {
         return this->insert(static_cast<size_type>(pos), value);
         }
@@ -283,8 +283,8 @@ namespace immutable
         return take(pos) + std::move(value) + drop(pos);
         }
 
-      template <class T>
-      vector insert(T pos, vector value) const
+      template <class TIndex>
+      vector insert(TIndex pos, vector value) const
         {
         return this->insert(static_cast<size_type>(pos), value);
         }
@@ -295,8 +295,8 @@ namespace immutable
         return rrb_slice(_impl, elems, _impl->cnt);
         }
 
-      template <class T>
-      vector drop(T elems) const
+      template <class TIndex>
+      vector drop(TIndex elems) const
         {
         return this->drop(static_cast<size_type>(elems));
         }
@@ -307,8 +307,8 @@ namespace immutable
         return rrb_slice(_impl, 0, elems);
         }
 
-      template <class T>
-      vector take(T elems) const
+      template <class TIndex>
+      vector take(TIndex elems) const
         {
         return this->take(static_cast<size_type>(elems));
         }
@@ -319,8 +319,8 @@ namespace immutable
         return rrb_slice(_impl, from, to);
         }
 
-      template <class T>
-      vector slice(T from, T to) const
+      template <class TIndex>
+      vector slice(TIndex from, TIndex to) const
         {
         return this->slice(static_cast<size_type>(from), static_cast<size_type>(to));
         }
@@ -444,8 +444,8 @@ namespace immutable
         return transient_rrb_nth(_impl, index);
         }
 
-      template <class T>
-      const_reference operator [] (T index) const
+      template <class TIndex>
+      const_reference operator [] (TIndex index) const
         {
         return this->operator[](static_cast<size_type>(index));
         }
@@ -457,8 +457,8 @@ namespace immutable
         return transient_rrb_nth(_impl, index);
         }
 
-      template <class T>
-      const_reference at(T index) const
+      template <class TIndex>
+      const_reference at(TIndex index) const
         {
         return this->at(static_cast<size_type>(index));
         }
@@ -478,8 +478,8 @@ namespace immutable
         transient_rrb_update(_impl, index, value);
         }
 
-      template <class T>
-      void set(T index, value_type value)
+      template <class TIndex>
+      void set(TIndex index, value_type value)
         {
         this->set(static_cast<size_type>(index), value);
         }
