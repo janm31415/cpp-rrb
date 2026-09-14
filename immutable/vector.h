@@ -205,11 +205,23 @@ namespace immutable
         return rrb_nth(_impl, index);
         }
 
+      template <class T>
+      const_reference operator [] (T index) const
+        {
+        return this->operator[](static_cast<size_type>(index));
+        }
+
       const_reference at(size_type index) const
         {
         if (index >= size())
           throw std::out_of_range("invalid vector<T> index");
         return rrb_nth(_impl, index);
+        }
+
+      template <class T>
+      const_reference at(T index) const
+        {
+        return this->at(static_cast<size_type>(index));
         }
 
       vector push_back(value_type value) const
@@ -227,9 +239,21 @@ namespace immutable
         return rrb_update(_impl, index, value);
         }
 
+      template <class T>
+      vector set(T index, value_type value) const
+        {
+        return this->set(static_cast<size_type>(index), value);
+        }
+
       vector erase(size_type pos) const
         {        
         return take(pos) + drop(pos + 1);
+        }
+
+      template <class T>
+      vector erase(T pos) const
+        {
+        return this->erase(static_cast<size_type>(pos));
         }
 
       vector erase(size_type from, size_type to) const
@@ -237,14 +261,32 @@ namespace immutable
         return to > from ? take(from) + drop(to) : *this;
         }
 
+      template <class T>
+      vector erase(T from, T to) const
+        {
+        return this->erase(static_cast<size_type>(from), static_cast<size_type>(to));
+        }
+
       vector insert(size_type pos, value_type value) const
         {        
         return take(pos).push_back(value) + drop(pos);
         }
 
+      template <class T>
+      vector insert(T pos, value_type value) const
+        {
+        return this->insert(static_cast<size_type>(pos), value);
+        }
+
       vector insert(size_type pos, vector value) const
         {
         return take(pos) + std::move(value) + drop(pos);
+        }
+
+      template <class T>
+      vector insert(T pos, vector value) const
+        {
+        return this->insert(static_cast<size_type>(pos), value);
         }
 
       // drops first 'elems' items from the vector
@@ -253,16 +295,34 @@ namespace immutable
         return rrb_slice(_impl, elems, _impl->cnt);
         }
 
+      template <class T>
+      vector drop(T elems) const
+        {
+        return this->drop(static_cast<size_type>(elems));
+        }
+
       // takes first 'elems' items from the vector
       vector take(size_type elems) const
         {       
         return rrb_slice(_impl, 0, elems);
         }
 
+      template <class T>
+      vector take(T elems) const
+        {
+        return this->take(static_cast<size_type>(elems));
+        }
+
       // returns the slice from "from" to "to"
       vector slice(size_type from, size_type to) const
         {
         return rrb_slice(_impl, from, to);
+        }
+
+      template <class T>
+      vector slice(T from, T to) const
+        {
+        return this->slice(static_cast<size_type>(from), static_cast<size_type>(to));
         }
 
       bool operator == (const vector& other) const
@@ -384,11 +444,23 @@ namespace immutable
         return transient_rrb_nth(_impl, index);
         }
 
+      template <class T>
+      const_reference operator [] (T index) const
+        {
+        return this->operator[](static_cast<size_type>(index));
+        }
+
       const_reference at(size_type index) const
         {
         if (index >= size())
           throw std::out_of_range("invalid transient_vector<T> index");
         return transient_rrb_nth(_impl, index);
+        }
+
+      template <class T>
+      const_reference at(T index) const
+        {
+        return this->at(static_cast<size_type>(index));
         }
 
       void push_back(value_type value)
@@ -404,6 +476,12 @@ namespace immutable
       void set(size_type index, value_type value)
         {
         transient_rrb_update(_impl, index, value);
+        }
+
+      template <class T>
+      void set(T index, value_type value)
+        {
+        this->set(static_cast<size_type>(index), value);
         }
 
       persistent_type persistent() const
